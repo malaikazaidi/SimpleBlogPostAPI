@@ -3,7 +3,6 @@ package ca.utoronto.utm.mcs;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bson.BSON;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
@@ -85,9 +84,29 @@ public class post implements HttpHandler{
             
             Document myDoc = collection.find(eq("_id", id)).first();
             if (myDoc != null) {
-            	OutputStream os = r.getResponseBody();
-        		r.sendResponseHeaders(200, myDoc.toJson().getBytes().length);
-        		os.write(myDoc.toJson().toString().getBytes());
+            	JSONArray array = new JSONArray();
+            	
+            	JSONObject response = new JSONObject();
+        		ObjectId idVal = (ObjectId) myDoc.get("_id");
+        		String author = (String) myDoc.get("author");
+        		String content = (String) myDoc.get("content");
+        		String titleVal = (String) myDoc.get("title");
+        		List<String> tags = (List<String>) myDoc.get("tags");
+        		
+        		JSONObject idObj = new JSONObject();
+        		idObj.put("$oid", id);
+        		
+        		response.put("_id", idObj);
+        		response.put("content", content);
+        		response.put("title", titleVal);
+        		response.put("tags", tags);
+        		response.put("author", author);
+        		
+        		array.put(response);
+            	
+        		OutputStream os = r.getResponseBody();
+        		r.sendResponseHeaders(200, array.toString().getBytes().length);
+        		os.write(array.toString().getBytes());
         		os.close();
             } else {
             	r.sendResponseHeaders(404, 0);
@@ -99,12 +118,31 @@ public class post implements HttpHandler{
         	
         	
         	MongoCursor<Document> cursor = collection.find(regex("title", ".*"+title+".*")).iterator();
+        	//JSONObject response = new JSONObject();
         	
         	if (cursor != null) {
         		JSONArray array = new JSONArray();
             	
             	while (cursor.hasNext()) {
-            		array.put(cursor.next().toJson());
+            		Document item = cursor.next();
+            		
+            		JSONObject response = new JSONObject();
+            		ObjectId id = (ObjectId) item.get("_id");
+            		String author = (String) item.get("author");
+            		String content = (String) item.get("content");
+            		String titleVal = (String) item.get("title");
+            		List<String> tags = (List<String>) item.get("tags");
+            		
+            		JSONObject idObj = new JSONObject();
+            		idObj.put("$oid", id);
+            		
+            		response.put("_id", idObj);
+            		response.put("content", content);
+            		response.put("title", titleVal);
+            		response.put("tags", tags);
+            		response.put("author", author);
+            		
+            		array.put(response);
             	}
             	cursor.close();
             	
