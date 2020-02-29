@@ -6,12 +6,16 @@ import java.io.OutputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.bson.Document;
+import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
 
 public class post implements HttpHandler{
 	
@@ -21,6 +25,7 @@ public class post implements HttpHandler{
 	private String content;
 	private String tags;
 	private JSONObject response = new JSONObject();
+	private String id;
 	
 	public post(MongoClient mongoClient) {
 		this.db = mongoClient;
@@ -43,6 +48,7 @@ public class post implements HttpHandler{
             }
             else if (r.getRequestMethod().equals("DELETE")) {
                 handleDelete(r);
+                deletepost(this.id,r);
                
             }
             else {
@@ -59,6 +65,25 @@ public class post implements HttpHandler{
             e.printStackTrace();
         }
 		
+	}
+
+	private void deletepost(String id, HttpExchange r) throws JSONException, IOException {
+		MongoDatabase database = db.getDatabase("csc301a2");
+		MongoCollection<Document> collection = database.getCollection("posts");
+		
+		FindIterable<Document> cursor = null;
+        try {
+        	cursor = collection.find(eq("_id", new ObjectId(id)));
+        	cursor.first().toString();
+        } catch(Exception e) {
+            r.sendResponseHeaders(404, 0);
+          
+        }
+		collection.deleteOne(new Document("_id", new ObjectId(id)));
+		
+		r.sendResponseHeaders(200, 0);
+    	OutputStream os = r.getResponseBody();
+        os.close();
 	}
 
 	private void addpost(String title, String author, String content, String tags,HttpExchange r) throws IOException, JSONException {
@@ -83,8 +108,20 @@ public class post implements HttpHandler{
 	
 	}
 
-	private void handleDelete(HttpExchange r) {
+	private void handleDelete(HttpExchange r) throws JSONException, IOException{
 		// TODO Auto-generated method stub
+		String body = Utils.convert(r.getRequestBody());
+        JSONObject deserialized = new JSONObject(body);
+        
+        if(deserialized.has("_id")) {
+        	id = deserialized.getString("_id");
+        
+        }
+        else {
+        	r.sendResponseHeaders(400, 0);
+        	OutputStream os = r.getResponseBody();
+	        os.close();
+        }
 		
 	}
 
