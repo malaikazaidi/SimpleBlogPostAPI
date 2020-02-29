@@ -3,8 +3,27 @@ package ca.utoronto.utm.mcs;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bson.BSON;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.mongodb.Block;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.mongodb.client.MongoCursor;
+import static com.mongodb.client.model.Filters.*;
+import com.mongodb.client.result.DeleteResult;
+import static com.mongodb.client.model.Updates.*;
+import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
+import java.util.List;
 
 public class post implements HttpHandler{
 
@@ -50,8 +69,61 @@ public class post implements HttpHandler{
 		
 	}
 
-	private void handleGet(HttpExchange r) {
+	private void handleGet(HttpExchange r) throws JSONException, IOException {
 		// TODO Auto-generated method stub
+		String body = Utils.convert(r.getRequestBody());
+        JSONObject deserialized = new JSONObject(body);
+        
+        MongoClient client = MongoClients.create();
+        MongoDatabase database = client.getDatabase("CSC301");
+        MongoCollection<Document> collection = database.getCollection("test");
+        
+        if (deserialized.has("_id")){
+        	String id_string = deserialized.getString("_id");
+        	
+        	ObjectId id = new ObjectId(id_string);
+            
+            Document myDoc = collection.find(eq("_id", id)).first();
+            if (myDoc != null) {
+            	OutputStream os = r.getResponseBody();
+        		r.sendResponseHeaders(200, myDoc.toJson().getBytes().length);
+        		os.write(myDoc.toJson().toString().getBytes());
+        		os.close();
+            } else {
+            	r.sendResponseHeaders(404, 0);
+        		OutputStream os = r.getResponseBody();
+    	        os.close();
+            }
+        } else if (deserialized.has("title")) {
+        	String title = deserialized.getString("title");
+        	
+        	
+        	MongoCursor<Document> cursor = collection.find(regex("title", ".*"+title+".*")).iterator();
+        	
+        	if (cursor != null) {
+        		JSONArray array = new JSONArray();
+            	
+            	while (cursor.hasNext()) {
+            		array.put(cursor.next().toJson());
+            	}
+            	cursor.close();
+            	
+            	OutputStream os = r.getResponseBody();
+        		r.sendResponseHeaders(200, array.toString().getBytes().length);
+        		os.write(array.toString().getBytes());
+        		os.close();
+        	} else {
+        		r.sendResponseHeaders(404, 0);
+        		OutputStream os = r.getResponseBody();
+    	        os.close();
+        	}
+        	
+        } else {
+        	//missing title and id in request body
+        	r.sendResponseHeaders(400, 0);
+        	OutputStream os = r.getResponseBody();
+	        os.close();
+        }
 		
 	}
 
