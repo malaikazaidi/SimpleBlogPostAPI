@@ -25,6 +25,8 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 public class Post implements HttpHandler{
 	
 	private MongoClient db;
@@ -33,8 +35,9 @@ public class Post implements HttpHandler{
 	private String content;
 	private String tags;
 	private JSONObject response = new JSONObject();
-	private String id;
+	private ObjectId id;
 	
+	@Inject
 	public Post(MongoClient mongoClient) {
 		this.db = mongoClient;
 
@@ -73,19 +76,19 @@ public class Post implements HttpHandler{
 		
 	}
 
-	private void deletepost(String id, HttpExchange r) throws JSONException, IOException {
+	private void deletepost(ObjectId id, HttpExchange r) throws JSONException, IOException {
 		MongoDatabase database = db.getDatabase("csc301a2");
 		MongoCollection<Document> collection = database.getCollection("posts");
 		
 		FindIterable<Document> cursor = null;
         try {
-        	cursor = collection.find(eq("_id", new ObjectId(id)));
+        	cursor = collection.find(eq("_id", id));
         	cursor.first().toString();
         } catch(Exception e) {
             r.sendResponseHeaders(404, 0);
           
         }
-		collection.deleteOne(new Document("_id", new ObjectId(id)));
+		collection.deleteOne(new Document("_id",id));
 		
 		r.sendResponseHeaders(200, 0);
     	OutputStream os = r.getResponseBody();
@@ -123,7 +126,7 @@ public class Post implements HttpHandler{
         JSONObject deserialized = new JSONObject(body);
         
         if(deserialized.has("_id")) {
-        	id = deserialized.getString("_id");
+        	id = new ObjectId(deserialized.getString("_id"));
         
         }
         else {
@@ -160,36 +163,33 @@ public class Post implements HttpHandler{
 		String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
         
-        MongoClient client = MongoClients.create();
-        MongoDatabase database = client.getDatabase("csc301a2");
+        MongoDatabase database = this.db.getDatabase("csc301a2");
         MongoCollection<Document> collection = database.getCollection("posts");
         
         if (deserialized.has("_id")){
-    		String id_string = deserialized.getString("_id");
-        	
-        	ObjectId id = new ObjectId(id_string);
+        	this.id = new ObjectId(deserialized.getString("_id"));
             
             Document myDoc = collection.find(eq("_id", id)).first();
             if (myDoc != null) {
             	JSONArray array = new JSONArray();
             	
-            	JSONObject response = new JSONObject();
-        		ObjectId idVal = (ObjectId) myDoc.get("_id");
-        		String author = (String) myDoc.get("author");
-        		String content = (String) myDoc.get("content");
-        		String titleVal = (String) myDoc.get("title");
-        		List<String> tags = (List<String>) myDoc.get("tags");
+            	//JSONObject response = new JSONObject();
+        		//this.id = (ObjectId) myDoc.get("_id");
+        		this.author = (String) myDoc.get("author");
+        		this.content = (String) myDoc.get("content");
+        		this.title = (String) myDoc.get("title");
+        		List<String> myTags = (List<String>) myDoc.get("tags");
         		
         		JSONObject idObj = new JSONObject();
-        		idObj.put("$oid", id);
+        		idObj.put("$oid", this.id);
         		
-        		response.put("_id", idObj);
-        		response.put("content", content);
-        		response.put("title", titleVal);
-        		response.put("tags", tags);
-        		response.put("author", author);
+        		this.response.put("_id", idObj);
+        		this.response.put("content", this.content);
+        		this.response.put("title", this.title);
+        		this.response.put("tags", myTags);
+        		this.response.put("author", this.author);
         		
-        		array.put(response);
+        		array.put(this.response);
             	
         		OutputStream os = r.getResponseBody();
         		r.sendResponseHeaders(200, array.toString().getBytes().length);
@@ -202,10 +202,10 @@ public class Post implements HttpHandler{
             }
         } else if (deserialized.has("title")) {
         	
-    		String title = deserialized.getString("title");
+    		this.title = deserialized.getString("title");
         	
         	
-        	MongoCursor<Document> cursor = collection.find(regex("title", ".*"+title+".*")).iterator();
+        	MongoCursor<Document> cursor = collection.find(regex("title", ".*"+this.title+".*")).iterator();
         	//JSONObject response = new JSONObject();
         	
         	if (cursor != null) {
@@ -214,23 +214,23 @@ public class Post implements HttpHandler{
             	while (cursor.hasNext()) {
             		Document item = cursor.next();
             		
-            		JSONObject response = new JSONObject();
-            		ObjectId id = (ObjectId) item.get("_id");
-            		String author = (String) item.get("author");
-            		String content = (String) item.get("content");
-            		String titleVal = (String) item.get("title");
-            		List<String> tags = (List<String>) item.get("tags");
+            		//JSONObject response = new JSONObject();
+            		this.id = (ObjectId) item.get("_id");
+            		this.author = (String) item.get("author");
+            		this.content = (String) item.get("content");
+            		//String titleVal = (String) item.get("title");
+            		List<String> myTags = (List<String>) item.get("tags");
             		
             		JSONObject idObj = new JSONObject();
             		idObj.put("$oid", id);
             		
-            		response.put("_id", idObj);
-            		response.put("content", content);
-            		response.put("title", titleVal);
-            		response.put("tags", tags);
-            		response.put("author", author);
+            		this.response.put("_id", idObj);
+            		this.response.put("content", this.content);
+            		this.response.put("title", this.title);
+            		this.response.put("tags", myTags);
+            		this.response.put("author", this.author);
             		
-            		array.put(response);
+            		array.put(this.response);
             	}
             	cursor.close();
             	
