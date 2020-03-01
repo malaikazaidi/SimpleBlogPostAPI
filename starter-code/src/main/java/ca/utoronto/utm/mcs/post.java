@@ -25,7 +25,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
 
-public class post implements HttpHandler{
+public class Post implements HttpHandler{
 	
 	private MongoClient db;
 	private String title;
@@ -35,7 +35,7 @@ public class post implements HttpHandler{
 	private JSONObject response = new JSONObject();
 	private String id;
 	
-	public post(MongoClient mongoClient) {
+	public Post(MongoClient mongoClient) {
 		this.db = mongoClient;
 
 	}
