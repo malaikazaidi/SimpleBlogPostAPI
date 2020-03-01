@@ -138,7 +138,6 @@ public class Post implements HttpHandler{
 		// TODO Auto-generated method stub
 		String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
-        System.out.println(deserialized);
         
         if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags") && deserialized.length() == 4) {
         	title = deserialized.getString("title");
