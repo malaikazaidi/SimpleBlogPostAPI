@@ -16,9 +16,12 @@ public class App
     public static void main(String[] args) throws IOException
     {
     	Dagger service = DaggerDaggerComponent.create().buildMongoHttp();
+    	Post post = DaggerDaggerComponent.create().buildPost();
+    	
     	
     	//Create your server context here
-    	service.getServer().createContext("/api/v1/post", new Post(service.getDb()));
+    	
+    	service.getServer().createContext("/api/v1/post", post);
     	service.getServer().start();
     	
     	System.out.printf("Server started on port %d", port);

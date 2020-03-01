@@ -9,4 +9,5 @@ import javax.inject.Singleton;
 public interface DaggerComponent {
 
 	public Dagger buildMongoHttp();
+	public Post buildPost();
 }
