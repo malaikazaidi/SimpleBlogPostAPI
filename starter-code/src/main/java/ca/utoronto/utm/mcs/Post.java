@@ -42,7 +42,7 @@ public class Post implements HttpHandler{
 		this.db = mongoClient;
 
 	}
-
+	
 	@Override
 	public void handle(HttpExchange r) throws IOException {
 		// TODO Auto-generated method stub
