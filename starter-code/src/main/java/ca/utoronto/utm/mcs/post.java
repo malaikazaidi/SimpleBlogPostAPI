@@ -25,7 +25,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Post implements HttpHandler{
+public class post implements HttpHandler{
 	
 	private MongoClient db;
 	private String title;
@@ -35,7 +35,7 @@ public class Post implements HttpHandler{
 	private JSONObject response = new JSONObject();
 	private String id;
 	
-	public Post(MongoClient mongoClient) {
+	public post(MongoClient mongoClient) {
 		this.db = mongoClient;
 
 	}
@@ -96,12 +96,15 @@ public class Post implements HttpHandler{
 
 		 MongoDatabase database = db.getDatabase("csc301a2");
 		 MongoCollection<Document> collection = database.getCollection("posts");
-		 
+		 List<String> tagarray = new ArrayList<String>();
+		 for (String i: Utils.parseRecord(tags)) {
+			 tagarray.add(Utils.removequotations(i));
+		 }
 		 Document doc = new Document()
-	                .append("title", this.title)
-	                .append("author", this.author)
-	                .append("content", this.content)
-	                .append("tags", this.tags);
+	                .append("title", title)
+	                .append("author", author)
+	                .append("content", content)
+	                .append("tags", tagarray);
 		 collection.insertOne(doc);
 		 
 		 response.put("_id", doc.getObjectId("_id"));
@@ -135,8 +138,9 @@ public class Post implements HttpHandler{
 		// TODO Auto-generated method stub
 		String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
+        System.out.println(deserialized);
         
-        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags")) {
+        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags") && deserialized.length() == 4) {
         	title = deserialized.getString("title");
         	author = deserialized.getString("author");
         	content = deserialized.getString("content");
