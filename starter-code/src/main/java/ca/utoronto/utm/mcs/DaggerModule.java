@@ -4,8 +4,6 @@ import java.io.IOException;
 
 import java.util.Arrays;
 
-import javax.xml.ws.spi.http.HttpHandler;
-
 import java.net.InetSocketAddress;
 import com.sun.net.httpserver.HttpServer;
 
