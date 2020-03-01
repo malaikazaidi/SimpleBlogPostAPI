@@ -25,21 +25,23 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 public class Post implements HttpHandler{
 	
-	private MongoClient db;
 	private String title;
 	private String author;
 	private String content;
 	private String tags;
 	private JSONObject response = new JSONObject();
 	private String id;
+	private MongoClient db;
 	
-	public Post(MongoClient mongoClient) {
-		this.db = mongoClient;
-
+	@Inject 
+	public Post(MongoClient db) {
+		this.db = db;
 	}
-
+	
 	@Override
 	public void handle(HttpExchange r) throws IOException {
 		// TODO Auto-generated method stub

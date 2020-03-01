@@ -3,6 +3,7 @@ package ca.utoronto.utm.mcs;
 import java.io.IOException;
 
 import java.util.Arrays;
+
 import java.net.InetSocketAddress;
 import com.sun.net.httpserver.HttpServer;
 
@@ -19,6 +20,7 @@ public class DaggerModule {
 
 	private static HttpServer server;
 	private static MongoClient db;
+	private static Post p;
 	
 	
     @Provides public MongoClient provideMongoClient() {
@@ -36,5 +38,10 @@ public class DaggerModule {
 			e.printStackTrace();
 		}
 		return server;
+    }
+    
+    @Provides public Post providePost() {
+    	p = new Post(db);
+    	return p;
     }
 }
