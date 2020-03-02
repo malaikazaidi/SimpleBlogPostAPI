@@ -51,12 +51,11 @@ public class Post implements HttpHandler{
             }
             else if (r.getRequestMethod().equals("PUT")) {
                 handlePut(r);
-                addpost(this.title, this.author, this.content, this.tags, r);
                
             }
             else if (r.getRequestMethod().equals("DELETE")) {
                 handleDelete(r);
-                deletepost(this.id,r);
+                
                
             }
             else {
@@ -125,6 +124,7 @@ public class Post implements HttpHandler{
 	     OutputStream os = r.getResponseBody();
 	     os.write(response.toString().getBytes());
 	     os.close();
+	     addpost(title, author,content, tags, r);
 	
 	}
 
@@ -143,10 +143,10 @@ public class Post implements HttpHandler{
 	        	}
 	        	else {
 	        		
-	        		System.out.println("fhurh");
 	        		String check = "^[0-9a-fA-F]{24}$";
 	        		if(idd.toString().matches(check)) {
 	        			id = new ObjectId(idd.toString());
+	        			deletepost(id,r);
 	        		}
 	        		else {
 	        			r.sendResponseHeaders(400, 0);
