@@ -159,90 +159,116 @@ public class Post implements HttpHandler{
 
 	private void handleGet(HttpExchange r) throws JSONException, IOException {
 		// TODO Auto-generated method stub
-		String body = Utils.convert(r.getRequestBody());
-        JSONObject deserialized = new JSONObject(body);
+		JSONObject deserialized;
+		try {
+			deserialized = new JSONObject(Utils.convert(r.getRequestBody()));
+		} catch (Exception e){
+			r.sendResponseHeaders(400, 0);
+        	OutputStream os = r.getResponseBody();
+	        os.close();
+	        return;
+		}
+        
         
         MongoDatabase database = this.db.getDatabase("csc301a2");
         MongoCollection<Document> collection = database.getCollection("posts");
         
         if (deserialized.has("_id")){
-        	this.id = new ObjectId(deserialized.getString("_id"));
-            
-            Document myDoc = collection.find(eq("_id", id)).first();
-            if (myDoc != null) {
-            	JSONArray array = new JSONArray();
-            	
-            	//JSONObject response = new JSONObject();
-        		//this.id = (ObjectId) myDoc.get("_id");
-        		this.author = (String) myDoc.get("author");
-        		this.content = (String) myDoc.get("content");
-        		this.title = (String) myDoc.get("title");
-        		List<String> myTags = (List<String>) myDoc.get("tags");
-        		
-        		JSONObject idObj = new JSONObject();
-        		idObj.put("$oid", this.id);
-        		
-        		this.response.put("_id", idObj);
-        		this.response.put("content", this.content);
-        		this.response.put("title", this.title);
-        		this.response.put("tags", myTags);
-        		this.response.put("author", this.author);
-        		
-        		array.put(this.response);
-            	
-        		OutputStream os = r.getResponseBody();
-        		r.sendResponseHeaders(200, array.toString().getBytes().length);
-        		os.write(array.toString().getBytes());
-        		os.close();
-            } else {
-            	r.sendResponseHeaders(404, 0);
-        		OutputStream os = r.getResponseBody();
-    	        os.close();
-            }
-        } else if (deserialized.has("title")) {
-        	
-    		this.title = deserialized.getString("title");
-        	
-        	
-        	MongoCursor<Document> cursor = collection.find(regex("title", ".*"+this.title+".*")).iterator();
-        	//JSONObject response = new JSONObject();
-        	
-        	if (cursor != null) {
-        		JSONArray array = new JSONArray();
-            	
-            	while (cursor.hasNext()) {
-            		Document item = cursor.next();
-            		
-            		//JSONObject response = new JSONObject();
-            		this.id = (ObjectId) item.get("_id");
-            		this.author = (String) item.get("author");
-            		this.content = (String) item.get("content");
-            		//String titleVal = (String) item.get("title");
-            		List<String> myTags = (List<String>) item.get("tags");
-            		
-            		JSONObject idObj = new JSONObject();
-            		idObj.put("$oid", id);
-            		
-            		this.response.put("_id", idObj);
-            		this.response.put("content", this.content);
-            		this.response.put("title", this.title);
-            		this.response.put("tags", myTags);
-            		this.response.put("author", this.author);
-            		
-            		array.put(this.response);
-            	}
-            	cursor.close();
-            	
+        	Object obj= deserialized.get("_id");
+        	if (!obj.getClass().getSimpleName().equals("String")) {
+        		//wrong type
+        		r.sendResponseHeaders(400, 0);
             	OutputStream os = r.getResponseBody();
-        		r.sendResponseHeaders(200, array.toString().getBytes().length);
-        		os.write(array.toString().getBytes());
-        		os.close();
-        	} else {
-        		r.sendResponseHeaders(404, 0);
-        		OutputStream os = r.getResponseBody();
     	        os.close();
+        	} else {
+	        	
+	            Document myDoc;
+	        	try {
+		    		this.id = new ObjectId((String)obj);
+		    		myDoc = collection.find(eq("_id", id)).first();
+		    		
+		    		JSONArray array = new JSONArray();
+		        	
+		    		this.author = (String) myDoc.get("author");
+		    		this.content = (String) myDoc.get("content");
+		    		this.title = (String) myDoc.get("title");
+		    		List<String> myTags = (List<String>) myDoc.get("tags");
+		    		
+		    		JSONObject idObj = new JSONObject();
+		    		idObj.put("$oid", this.id);
+		    		
+		    		this.response.put("_id", idObj);
+		    		this.response.put("content", this.content);
+		    		this.response.put("title", this.title);
+		    		this.response.put("tags", myTags);
+		    		this.response.put("author", this.author);
+		    		
+		    		array.put(this.response);
+		        	
+		    		OutputStream os = r.getResponseBody();
+		    		r.sendResponseHeaders(200, array.toString().getBytes().length);
+		    		os.write(array.toString().getBytes());
+		    		os.close();
+	        	} catch (Exception e) {
+	        		//not found 
+	        		r.sendResponseHeaders(404, 0);
+	            	OutputStream os = r.getResponseBody();
+	    	        os.close();
+	    	        return;
+	        	}
+	            
+            	
         	}
+        } else if (deserialized.has("title")) {
+        	Object titleObj = deserialized.get("title");
         	
+        	if (!titleObj.getClass().getSimpleName().equals("String")) {
+        		//wrong type
+        		r.sendResponseHeaders(400, 0);
+            	OutputStream os = r.getResponseBody();
+    	        os.close();
+        	} else {
+        		this.title = (String)titleObj;
+            	
+        		MongoCursor<Document> cursor = null;
+        		cursor = collection.find(regex("title", ".*"+this.title+".*")).iterator();
+        		if (cursor.hasNext()) {
+            		JSONArray array = new JSONArray();
+                	
+                	while (cursor.hasNext()) {
+                		Document item = cursor.next();
+                		
+                		//JSONObject response = new JSONObject();
+                		this.id = (ObjectId) item.get("_id");
+                		this.author = (String) item.get("author");
+                		this.content = (String) item.get("content");
+                		//String titleVal = (String) item.get("title");
+                		List<String> myTags = (List<String>) item.get("tags");
+                		
+                		JSONObject idObj = new JSONObject();
+                		idObj.put("$oid", id);
+                		
+                		this.response.put("_id", idObj);
+                		this.response.put("content", this.content);
+                		this.response.put("title", this.title);
+                		this.response.put("tags", myTags);
+                		this.response.put("author", this.author);
+                		
+                		array.put(this.response);
+                	}
+                	cursor.close();
+                	
+                	OutputStream os = r.getResponseBody();
+            		r.sendResponseHeaders(200, array.toString().getBytes().length);
+            		os.write(array.toString().getBytes());
+            		os.close();
+            	} else {
+            		//no data found in database
+            		r.sendResponseHeaders(404, 0);
+            		OutputStream os = r.getResponseBody();
+        	        os.close();
+                }
+        	}
         } else {
         	//missing title and id in request body
         	r.sendResponseHeaders(400, 0);
