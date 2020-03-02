@@ -29,10 +29,10 @@ import javax.inject.Inject;
 
 public class Post implements HttpHandler{
 	
-	private String title;
-	private String author;
-	private String content;
-	private String tags;
+	private Object title;
+	private Object author;
+	private Object content;
+	private Object tags;
 	private JSONObject response = new JSONObject();
 	private ObjectId id;
 	private MongoClient db;
@@ -78,7 +78,7 @@ public class Post implements HttpHandler{
 	private void deletepost(ObjectId id, HttpExchange r) throws JSONException, IOException {
 		MongoDatabase database = db.getDatabase("csc301a2");
 		MongoCollection<Document> collection = database.getCollection("posts");
-		
+		System.out.println(id);
 		FindIterable<Document> cursor = null;
         try {
         	cursor = collection.find(eq("_id", id));
@@ -94,14 +94,23 @@ public class Post implements HttpHandler{
         os.close();
 	}
 
-	private void addpost(String title, String author, String content, String tags,HttpExchange r) throws IOException, JSONException {
+	private void addpost(Object title, Object author, Object content, Object tags,HttpExchange r) throws IOException, JSONException {
 
 		 MongoDatabase database = db.getDatabase("csc301a2");
 		 MongoCollection<Document> collection = database.getCollection("posts");
 		 List<String> tagarray = new ArrayList<String>();
-		 for (String i: Utils.parseRecord(tags)) {
-			 tagarray.add(Utils.removequotations(i));
+		 JSONArray tag = (JSONArray) tags;
+		 for (int i =0; i<tag.length();i++) {
+			 if((tag.get(i)).getClass() != String.class) {
+				 r.sendResponseHeaders(400, 0);
+			     OutputStream os = r.getResponseBody();
+			     os.close();
+			 }
+			 else {
+				 tagarray.add(tag.get(i).toString());
+			 }
 		 }
+	
 		 Document doc = new Document()
 	                .append("title", title)
 	                .append("author", author)
@@ -121,39 +130,77 @@ public class Post implements HttpHandler{
 
 	private void handleDelete(HttpExchange r) throws JSONException, IOException{
 		// TODO Auto-generated method stub
-		String body = Utils.convert(r.getRequestBody());
-        JSONObject deserialized = new JSONObject(body);
-        
-        if(deserialized.has("_id")) {
-        	id = new ObjectId(deserialized.getString("_id"));
-        
-        }
-        else {
-        	r.sendResponseHeaders(400, 0);
+		try {
+			String body = Utils.convert(r.getRequestBody());
+	        JSONObject deserialized = new JSONObject(body);
+	        
+	        if(deserialized.has("_id")) {
+	        	Object idd = deserialized.get("_id");
+	        	if(!(idd.getClass() == String.class )) { 
+	        		r.sendResponseHeaders(400, 0);
+	            	OutputStream os = r.getResponseBody();
+	    	        os.close();
+	        	}
+	        	else {
+	        		
+	        		System.out.println("fhurh");
+	        		String check = "^[0-9a-fA-F]{24}$";
+	        		if(idd.toString().matches(check)) {
+	        			id = new ObjectId(idd.toString());
+	        		}
+	        		else {
+	        			r.sendResponseHeaders(400, 0);
+	                	OutputStream os = r.getResponseBody();
+	        	        os.close();
+	        		}
+	        		
+	        	}
+	        
+	        }
+	        else {
+	        	r.sendResponseHeaders(400, 0);
+	        	OutputStream os = r.getResponseBody();
+		        os.close();
+	        }
+		}
+		catch(Exception e) {
+			r.sendResponseHeaders(400, 0);
         	OutputStream os = r.getResponseBody();
 	        os.close();
-        }
+		}
 		
 	}
 
 	private void handlePut(HttpExchange r) throws JSONException, IOException {
 		// TODO Auto-generated method stub
-		String body = Utils.convert(r.getRequestBody());
-        JSONObject deserialized = new JSONObject(body);
-        
-        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags") && deserialized.length() == 4) {
-        	title = deserialized.getString("title");
-        	author = deserialized.getString("author");
-        	content = deserialized.getString("content");
-        	tags = deserialized.getString("tags");
-        	
-       
-        }
-        else {
-        	r.sendResponseHeaders(400, 0);
+		try {
+			String body = Utils.convert(r.getRequestBody());
+	        JSONObject deserialized = new JSONObject(body);
+	        
+	        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags") && deserialized.length() == 4) {
+	        	title = deserialized.get("title");
+	        	author = deserialized.get("author");
+	        	content = deserialized.get("content");
+	        	tags = deserialized.get("tags");
+	        	
+	        	if(!(title.getClass() == String.class && author.getClass() == String.class  && content.getClass() == String.class && tags.getClass() == JSONArray.class)) { 
+	        		r.sendResponseHeaders(400, 0);
+	            	OutputStream os = r.getResponseBody();
+	    	        os.close();
+	        	}
+	        	
+	        }
+	        else {
+	        	r.sendResponseHeaders(400, 0);
+	        	OutputStream os = r.getResponseBody();
+		        os.close();
+	        }
+		}
+		catch(Exception e) {
+			r.sendResponseHeaders(400, 0);
         	OutputStream os = r.getResponseBody();
 	        os.close();
-        }
+		}
 		
 	}
 
