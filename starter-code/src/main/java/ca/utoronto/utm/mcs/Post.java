@@ -124,7 +124,7 @@ public class Post implements HttpHandler{
 	     OutputStream os = r.getResponseBody();
 	     os.write(response.toString().getBytes());
 	     os.close();
-	     addpost(title, author,content, tags, r);
+	    
 	
 	}
 
@@ -177,7 +177,7 @@ public class Post implements HttpHandler{
 			String body = Utils.convert(r.getRequestBody());
 	        JSONObject deserialized = new JSONObject(body);
 	        
-	        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags") && deserialized.length() == 4) {
+	        if(deserialized.has("title") && deserialized.has("author") && deserialized.has("content") && deserialized.has("tags")) {
 	        	title = deserialized.get("title");
 	        	author = deserialized.get("author");
 	        	content = deserialized.get("content");
@@ -188,7 +188,7 @@ public class Post implements HttpHandler{
 	            	OutputStream os = r.getResponseBody();
 	    	        os.close();
 	        	}
-	        	
+	        	addpost(title, author,content, tags, r);
 	        }
 	        else {
 	        	r.sendResponseHeaders(400, 0);
